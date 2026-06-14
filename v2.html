@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>MTP Benchmark b9198 → b9484</title>
+<style>
+body { font-family: monospace; background: #1a1a2e; color: #e0e0e0; max-width: 960px; margin: 2em auto; padding: 0 1em; }
+h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: .3em; }
+h2 { color: #0f3460; background: #16213e; padding: .5em; border-radius: 4px; margin-top: 2em; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+th, td { padding: .4em .8em; text-align: right; border-bottom: 1px solid #333; }
+th { color: #e94560; text-align: left; }
+td:first-child { text-align: left; }
+.best { background: #1a3a1a; color: #4eff4e; font-weight: bold; }
+.worse { color: #ff6b6b; }
+.ok { color: #4ecdc4; }
+.warning { background: #3a2a0a; padding: .5em 1em; border-left: 3px solid #ffa500; margin: 1em 0; }
+.good { background: #0a2a1a; padding: .5em 1em; border-left: 3px solid #4eff4e; margin: 1em 0; }
+.note { color: #888; font-size: .9em; }
+</style></head><body>
+<h1>MTP Benchmark: b9198 → b9484 (llama.cpp Vulkan)</h1>
+<p>Corsair AI 300 / AMD Radeon 8060S (RADV STRIX_HALO, gfx1150)<br>
+Hardware speculaton disabled. -n 128 tokens.</p>
+
+<div class="warning"><strong>⚠ Caveats:</strong> b9198 used Q4_K_XL + -t 8 + default context. b9484 uses Q6_K_XL + -t 16 + ctx=4096. Raw numbers are NOT directly comparable. MTP speedup ratios (vs same-build baseline) ARE comparable.</div>
+<h2>Qwen3.6-27B-UD (Q6_K_XL, 23GB)</h2>
+<table><tr><th>Config</th><th>Prompt t/s</th><th>Gen t/s</th><th>Speedup vs baseline</th></tr>
+<tr class="best"><td>baseline_t8</td><td>4.8</td><td>5.8</td><td>+0.0%</td></tr>
+<tr class="best"><td>baseline_t16</td><td>7.4</td><td>7.8</td><td>+0.0%</td></tr>
+<tr class="best"><td>mtp_n2_t16</td><td>6.2</td><td>15.2</td><td>+94.9%</td></tr>
+<tr class="ok"><td>mtp_n2_t16_poll</td><td>6.2</td><td>15.2</td><td>+94.9%</td></tr>
+<tr class="ok"><td>mtp_n2_t16_ub</td><td>5.8</td><td>15.2</td><td>+94.9%</td></tr>
+<tr class="ok"><td>mtp_n2_t16_pu</td><td>5.8</td><td>15.2</td><td>+94.9%</td></tr>
+<tr class="ok"><td>mtp_n3_t16_pu</td><td>5.7</td><td>14.8</td><td>+89.7%</td></tr>
+<tr class="ok"><td>mtp_n5_t16_pu</td><td>5.5</td><td>12.9</td><td>+65.4%</td></tr>
+</table>
+<div class="note"><p><strong>b9198 (Q4_K_XL, -t8):</strong> baseline=11.5 t/s, MTP best=16.7 t/s (+45.2%)</p><p><strong>b9484 (Q6_K_XL, -t16):</strong> baseline=7.8 t/s, MTP best=15.2 t/s (+94.9%)</p><div class="good">MTP speedup improved by 49.7% compared to b9198 (from 45% → 95%)</div></div>
+<h2>Qwen3.6-35B-A3B-UD (Q6_K_XL, 31GB)</h2>
+<table><tr><th>Config</th><th>Prompt t/s</th><th>Gen t/s</th><th>Speedup vs baseline</th></tr>
+<tr class="best"><td>baseline_t8</td><td>10.8</td><td>15.7</td><td>+0.0%</td></tr>
+<tr class=""><td>baseline_t16</td><td>9.4</td><td>15.6</td><td>+0.0%</td></tr>
+<tr class="best"><td>mtp_n2_t16</td><td>8.6</td><td>16.8</td><td>+7.7%</td></tr>
+<tr class="worse"><td>mtp_n2_t16_poll</td><td>4.5</td><td>7.5</td><td>-51.9%</td></tr>
+<tr class="worse"><td>mtp_n2_t16_ub</td><td>4.7</td><td>8.8</td><td>-43.6%</td></tr>
+<tr class="worse"><td>mtp_n2_t16_pu</td><td>2.4</td><td>8.6</td><td>-44.9%</td></tr>
+<tr class="worse"><td>mtp_n3_t16_pu</td><td>2.7</td><td>7.6</td><td>-51.3%</td></tr>
+<tr class="worse"><td>mtp_n5_t16_pu</td><td>3.4</td><td>5.0</td><td>-67.9%</td></tr>
+</table>
+<div class="note"><p><strong>b9198 (Q4_K_XL, -t8):</strong> baseline=56.5 t/s, MTP best=62.6 t/s (+10.8%)</p><p><strong>b9484 (Q6_K_XL, -t16):</strong> baseline=15.6 t/s, MTP best=16.8 t/s (+7.7%)</p><div class="warning">MTP speedup decreased by 3.1% compared to b9198 (from 11% → 8%)</div></div>
+
+<h2>Key Findings</h2>
+<div class="good"><strong>27B: MTP is a massive win.</strong> n=2 gives ~95% speedup over baseline (7.8 → 15.2 t/s). Poll/ub flags have NO effect — pure MTP is optimal.</div>
+<div class="warning"><strong>35B: --poll and -ub actively hurt performance.</strong> On b9484, the 35B model with MTP + --poll/-ub drops to ~7-8 t/s (50% slower). The ONLY config that works is bare <code>--spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-ngl 99 -t 16</code> without poll or ub. This is a regression vs b9198 where these flags helped.</div>
+<div class="warning"><strong>n=5 hurts both models.</strong> n=3 is marginally better on 27B but worse on 35B. Stick with n=2.</div>
+<p class="note">b9484 uses shared library architecture (libllama-cli-impl.so) vs monolithic b9198 binary. This may explain behavioral differences with --poll/-ub flags.</p>
+
+<h2>Recommended Config</h2>
+<table><tr><th>Model</th><th>Config</th></tr>
+<tr><td>27B Q6_K_XL</td><td class="ok">--spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-ngl 99 -t 16</td></tr>
+<tr><td>35B Q6_K_XL</td><td class="ok">--spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-ngl 99 -t 16 <span class="worse">(NO --poll or -ub)</span></td></tr>
+</table>
+
+<h2>Draft Acceptance Stats</h2>
+<p class="note">b9484 no longer prints draft acceptance rate in llama-cli output (was available in b9198). Only raw t/s is reported.</p>
+
+</body></html>
