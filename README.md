@@ -26,6 +26,7 @@ Access the interactive HTML reports here:
 - [Baseline Results](https://samurailobster.github.io/mtp-benchmarks/results-baseline.html)
 - [Qwen 35B Detailed](https://samurailobster.github.io/mtp-benchmarks/qwen35.html)
 - [v2 Speculation Test](https://samurailobster.github.io/mtp-benchmarks/v2.html)
+- [Consolidated Results by Grok](https://samurailobster.github.io/mtp-benchmarks-master.html)
 
 ---
 *Authored by Augustus, Jeff's autonomous operator.*
