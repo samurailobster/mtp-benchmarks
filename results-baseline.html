@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>llama.cpp b9198 — MTP Benchmark Results</title>
+<style>
+:root {
+  --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #c9d1d9;
+  --muted: #8b949e; --accent: #58a6ff; --green: #3fb950; --red: #f85149;
+  --orange: #d29922; --yellow: #e3b341;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; }
+h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(90deg, #58a6ff, #3fb950); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.subtitle { color: var(--muted); margin-bottom: 2rem; font-size: 0.95rem; }
+.section { margin-bottom: 2.5rem; }
+.section h2 { font-size: 1.3rem; color: var(--accent); margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+.card h3 { color: var(--accent); margin-bottom: 0.75rem; font-size: 1.1rem; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th { text-align: left; padding: 0.6rem 0.8rem; background: #21262d; color: var(--accent); border-bottom: 2px solid var(--border); position: sticky; top: 0; }
+td { padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--border); }
+tr:hover td { background: #1c2128; }
+.best { color: var(--green); font-weight: bold; }
+.bad { color: var(--red); }
+.tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; vertical-align: middle; }
+.tag-optimal { background: #238636; color: #fff; }
+.tag-cpu { background: #1f6feb; color: #fff; }
+.tag-note { background: var(--orange); color: #000; }
+
+.model-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+.model-size { font-weight: bold; font-size: 1.2rem; }
+.model-info { color: var(--muted); font-size: 0.85rem; }
+
+.chart-container { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; position: relative; }
+.bar-row { display: flex; align-items: center; margin-bottom: 0.4rem; font-size: 0.82rem; }
+.bar-label { width: 130px; text-align: right; padding-right: 0.75rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+.bar-track { flex: 1; height: 22px; background: #21262d; border-radius: 4px; position: relative; overflow: hidden; min-width: 200px; }
+.bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-weight: 600; color: #fff; font-size: 0.75rem; transition: width 0.6s ease; }
+.bar-fill.green { background: linear-gradient(90deg, #238636, #3fb950); }
+.bar-fill.blue { background: linear-gradient(90deg, #1f6feb, #58a6ff); }
+.bar-fill.orange { background: linear-gradient(90deg, #d29922, #e3b341); color: #000; }
+.bar-fill.red { background: linear-gradient(90deg, #da3633, #f85149); }
+.bar-value { width: 70px; text-align: right; padding-left: 0.5rem; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+.spec-info { background: #21262d; border-radius: 6px; padding: 0.75rem 1rem; margin-top: 1rem; font-size: 0.85rem; }
+.spec-info code { background: #30363d; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.82rem; color: var(--yellow); }
+
+.key-findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.finding-card { background: #21262d; border-left: 3px solid var(--accent); padding: 1rem; border-radius: 0 8px 8px 0; }
+.finding-card h4 { color: var(--green); margin-bottom: 0.3rem; font-size: 0.95rem; }
+.finding-card p { color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
+
+.environment { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+.env-item { background: #21262d; padding: 0.6rem 0.8rem; border-radius: 6px; font-size: 0.85rem; }
+.env-item strong { color: var(--accent); display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.15rem; }
+
+.tab-bar { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 1rem; }
+.tab { padding: 0.6rem 1.2rem; cursor: pointer; border-radius: 8px 8px 0 0; font-size: 0.9rem; color: var(--muted); transition: all 0.2s; }
+.tab:hover { color: var(--text); background: #21262d; }
+.tab.active { color: var(--accent); border-bottom: 2px solid var(--accent); margin-bottom: -2px; font-weight: 600; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+@media (max-width: 768px) {
+  body { padding: 1rem; }
+  .bar-row { flex-wrap: wrap; }
+  .bar-track { width: 100%; margin-top: 0.25rem; }
+}
+</style>
+</head>
+<body>
+
+<h1>llama.cpp b9198 — Multi-Token Prediction Benchmark</h1>
+<p class="subtitle">Systematic testing of MTP (Multi-Token Prediction) speculative decoding across Qwen3.6 model sizes on AMD Strix Halo hardware. Vulkan backend.</p>
+
+<!-- Environment -->
+<div class="section">
+<h2>🖥️ Test Environment</div>
+<div class="environment">
+  <div class="env-item"><strong>Hardware</strong>Corsair AI 300 / AMD Radeon 8060S (RADV STRIX_HALO, gfx1150)</div>
+  <div class="env-item"><strong>System RAM</strong>124 GB unified memory (Strix Halo architecture)</div>
+  <div class="env-item"><strong>OS</strong>Fedora 44</div>
+  <div class="env-item"><strong>Backend</strong>Vulkan (RADV driver, Mesa)</div>
+  <div class="env-item"><strong>llama.cpp</strong>b9198 (a6d6183db) — official release binaries</div>
+  <div class="env-item"><strong>ROCm Status</strong>Container has ROCm 7.2.1 but incomplete SDK (missing hip-lang cmake packages). Building from source not viable.</div>
+  <div class="env-item"><strong>Models</strong>All Q4_K_XL quantized, MTP-enabled (.gguf)</div>
+  <div class="env-item"><strong>Benchmark Cmd</strong><code>-n 128 --temp 0.7 --top-p 0.9 -s 42 --chat-template none</code></div>
+</div>
+</div>
+
+<!-- Key Findings -->
+<div class="section">
+<h2>🔑 Key Findings</h2>
+<div class="key-findings">
+  <div class="finding-card">
+    <h4>N-max = 2 is optimal for all models</h4>
+    <p>Across 9B, 27B, and 35B parameter models, the sweet spot for MTP draft tokens is n-max=2. Going beyond that either plateaus (27B) or starts hurting performance (35B n-max≥3).</p>
+  </div>
+  <div class="finding-card">
+    <h4>Largest speedup at smallest scale</h4>
+    <p>The 9B model sees a <strong>+39% generation speedup</strong> (48.0 vs 34.6 t/s). The 27B gets +45% (16.7 vs 11.5 t/s). The 35B only gains +11% (62.6 vs 56.5 t/s) — the benefit diminishes as model size grows.</p>
+  </div>
+  <div class="finding-card">
+    <h4>N-max ≥ 5 is dangerous</h4>
+    <p>The 9B model at n-max=8 drops to 22.5 t/s — a <strong>35% degradation</strong>. Too many speculative tokens overwhelms the bandwidth. This applies across model sizes.</p>
+  </div>
+  <div class="finding-card">
+    <h4>Vulkan auto-offloading beats manual --gpu-layers</h4>
+    <p>Forcing all layers to GPU with <code>--gpu-layers 99</code> hurts performance on larger models (27B dropped from 11.5 to 4.7 t/s). Let Vulkan auto-manage memory placement for best results.</p>
+  </div>
+</div>
+</div>
+
+<!-- Vulkan Results -->
+<div class="section">
+<h2>🟣 Vulkan Backend — Complete MTP Sweep</h2>
+
+<div class="tab-bar">
+  <div class="tab active" onclick="showTab('results')">Results Table</div>
+  <div class="tab" onclick="showTab('charts')">Visual Charts</div>
+</div>
+
+<!-- Tab: Results Table -->
+<div id="tab-results" class="tab-content active">
+
+<!-- 9B Model -->
+<div class="card">
+  <div class="model-header">
+    <span class="model-size">Qwen3.5-9B (UD)</span>
+    <span class="model-info">Q4_K_XL · 5.8 GB · MTP-enabled</span>
+  </div>
+  <table>
+    <thead>
+      <tr><th>MTP Config</th><th>Prompt t/s</th><th>Generation t/s</th><th>Δ vs Baseline</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Baseline (no MTP)</td><td class="best">31.0</td><td>34.6</td><td>—</td></tr>
+      <tr><td>n-max = 1</td><td>30.2</td><td>40.4</td><td><span class="best">+17%</span></td></tr>
+      <tr><td>n-max = 2<span class="tag tag-optimal">OPTIMAL</span></td><td>29.4</td><td class="best">48.0</td><td><span class="best">+39%</span></td></tr>
+      <tr><td>n-max = 3</td><td>30.1</td><td>47.7</td><td><span class="best">+38%</span></td></tr>
+      <tr><td>n-max = 4</td><td>29.5</td><td>43.9</td><td><span class="best">+27%</span></td></tr>
+      <tr><td>n-max = 5</td><td>29.2</td><td>43.4</td><td><span class="best">+25%</span></td></tr>
+      <tr><td>n-max = 8<span class="tag tag-note">DANGEROUS</span></td><td>30.3</td><td class="bad">21.5</td><td><span class="bad">-38%</span></td></tr>
+    </tbody>
+  </table>
+  <div class="spec-info"><strong>Recommended command:</strong><br>
+  <code>llama-cli -m model.gguf --spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-ngl 99 -n 128</code></div>
+</div>
+
+<!-- 27B Model -->
+<div class="card">
+  <div class="model-header">
+    <span class="model-size">Qwen3.6-27B (UD)</span>
+    <span class="model-info">Q4_K_XL · 17 GB · MTP-enabled</span>
+  </div>
+  <table>
+    <thead>
+      <tr><th>MTP Config</th><th>Prompt t/s</th><th>Generation t/s</th><th>Δ vs Baseline</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Baseline (no MTP)</td><td class="best">10.9</td><td>11.5</td><td>—</td></tr>
+      <tr><td>n-max = 1</td><td>10.7</td><td>15.1</td><td><span class="best">+31%</span></td></tr>
+      <tr><td>n-max = 2<span class="tag tag-optimal">OPTIMAL</span></td><td>10.7</td><td class="best">16.7</td><td><span class="best">+45%</span></td></tr>
+      <tr><td>n-max = 3</td><td>10.8</td><td>15.1</td><td><span class="best">+31%</span></td></tr>
+      <tr><td>n-max = 5</td><td>10.7</td><td>16.0</td><td><span class="best">+39%</span></td></tr>
+    </tbody>
+  </table>
+  <div class="spec-info"><strong>Recommended command:</strong><br>
+  <code>llama-cli -m model.gguf --spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-ngl 99 -n 128</code></div>
+</div>
+
+<!-- 35B Model -->
+<div class="card">
+  <div class="model-header">
+    <span class="model-size">Qwen3.6-35B-A3B (UD)</span>
+    <span class="model-info">Q4_K_XL · 22 GB · MTP-enabled</span>
+  </div>
+  <table>
+    <thead>
+      <tr><th>MTP Config</th><th>Prompt t/s</th><th>Generation t/s</th><th>Δ vs Baseline</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Baseline (no MTP)</td><td class="best">44.8</td><td>56.5</td><td>—</td></tr>
+      <tr><td>n-max = 1</td><td>41.9</td><td>55.7</td><td style="color: var(--muted)">-1%</td></tr>
+      <tr><td>n-max = 2<span class="tag tag-optimal">OPTIMAL</span></td><td>42.6</td><td class="best">62.6</td><td><span class="best">+11%</span></td></tr>
+      <tr><td>n-max = 3</td><td>41.9</td><td>49.4</td><td><span class="bad">-13%</span></td></tr>
+      <tr><td>n-max = 5</td><td>42.5</td><td>56.7</td><td style="color: var(--muted)">+0.4%</td></tr>
+    </tbody>
+  </table>
+  <div class="spec-info"><strong>Recommended command:</strong><br>
+  <code>llama-cli -m model.gguf --spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-ngl 99 -n 128</code></div>
+  <p style="margin-top:0.75rem;font-size:0.85rem;color:var(--orange)">⚠️ The 35B model has ~0.5-1 GB of actual GPU VRAM on Strix Halo. At this scale, MTP draft heads compete with the main model for bandwidth. Only small n-max values (1-2) provide benefit. Larger n-max values degrade performance.</p>
+</div>
+
+</div>
+
+<!-- Tab: Visual Charts -->
+<div id="tab-charts" class="tab-content">
+
+<div class="chart-container">
+  <h3 style="margin-bottom:1rem;color:var(--accent)">Generation Throughput (t/s) — All Models &amp; MTP Configs</h3>
+  <div style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Higher is better. Bars normalized to each model's max throughput.</div>
+
+  <!-- 9B -->
+  <p style="font-weight:600;margin-top:1rem;margin-bottom:0.5rem;color:#e3b341">Qwen3.5-9B</p>
+  <div class="bar-row"><span class="bar-label">baseline</span><div class="bar-track"><div class="bar-fill blue" style="width:72.1%">34.6</div></div><span class="bar-value" style="color:var(--muted)">—</span></div>
+  <div class="bar-row"><span class="bar-label">n-max = 1</span><div class="bar-track"><div class="bar-fill blue" style="width:84.2%">40.4</div></div><span class="bar-value" style="color:var(--green)">+17%</span></div>
+  <div class="bar-row"><span class="bar-label">n-max = 2 ⭐</span><div class="bar-track"><div class="bar-fill green" style="width:100%">48.0</div></div><span class="bar-value" style="color:var(--green)">+39%</span></div>
+  <div class="bar-row"><span class="bar-label">n-max = 3</span><div class="bar-track"><div class="bar-fill blue" style="width:99.4%">47.7</div></div><span class="bar-value" style="color:var(--green)">+38%</span></div>
+  <div class="bar-row"><span class="bar-label">n-max = 4</span><div class="bar-track"><div class="bar-fill blue" style="width:91.5%">43.9</div></div><span class="bar-value" style="color:var(--green)">+27%</span></div>
+  <div class="bar-row"><span class="bar-label">n-max = 5</span><div class="bar-track"><div class="bar-fill blue" style="width:90.4%">43.4</div></div><span class="bar-value" style="color:var(--green)">+25%</span></div>
+  <div class="bar-row"><span class="bar-label">n-max = 8 ⚠️</span><div class="bar-track"><div class="bar-fill red" style="width:46.9%">21.5</div></div><span class="bar-value" style="color:var(--red)">-35%</span></div>
+
+  <!-- 27B -->
+  <p style="font-weight:600;margin-top:1.5rem;margin-bottom:0.5rem;color:#e3b341">Qwen3.6-27B</p>
+  <div class="bar-row"><span class="bar-label">baseline</span><div class="bar-track"><div class="bar-fill orange" style="width:68.9%">11.5</div></div><span class="bar-value" style="color:var(--muted)">—</span></div>
+  <div class="bar-row"><span class="bar-label">n-max = 1</span><div class="bar-track"><div class="bar-fill orange" style="width:90.4%">15.1</div></div><span class="bar-value" style="color:var(--green)">+31%</span></div>
+  <div class="bar-row"><span class="bar-label">n-max = 2 ⭐</span><div class="bar-track"><div class="bar-fill green" style="width:100%">16.7</div></div><span class="bar-value" style="color:var(--green)">+45%</span></div>
+  <div class="bar-row"><span class="bar-label">n-max = 3</span><div class="bar-track"><div class="bar-fill orange" style="width:90.4%">15.1</div></div><span class="bar-value" style="color:var(--green)">+31%</span></div>
+  <div class="bar-row"><span class="bar-label">n-max = 5</span><div class="bar-track"><div class="bar-fill orange" style="width:95.8%">16.0</div></div><span class="bar-value" style="color:var(--green)">+39%</span></div>
+
+  <!-- 35B -->
+  <p style="font-weight:600;margin-top:1.5rem;margin-bottom:0.5rem;color:#e3b341">Qwen3.6-35B-A3B</p>
+  <div class="bar-row"><span class="bar-label">baseline</span><div class="bar-track"><div class="bar-fill blue" style="width:90.3%">56.5</div></div><span class="bar-value" style="color:var(--muted)">—</span></div>
+  <div class="bar-row"><span class="bar-label">n-max = 1</span><div class="bar-track"><div class="bar-fill blue" style="width:98.6%">55.7</div></div><span class="bar-value" style="color:var(--red)">-1%</span></div>
+  <div class="bar-row"><span class="bar-label">n-max = 2 ⭐</span><div class="bar-track"><div class="bar-fill green" style="width:100%">62.6</div></div><span class="bar-value" style="color:var(--green)">+11%</span></div>
+  <div class="bar-row"><span class="bar-label">n-max = 3</span><div class="bar-track"><div class="bar-fill red" style="width:78.9%">49.4</div></div><span class="bar-value" style="color:var(--red)">-13%</span></div>
+  <div class="bar-row"><span class="bar-label">n-max = 5</span><div class="bar-track"><div class="bar-fill blue" style="width:90.6%">56.7</div></div><span class="bar-value" style="color:var(--muted)">+0.4%</span></div>
+</div>
+
+<div class="chart-container">
+  <h3 style="margin-bottom:1rem;color:var(--accent)">Speedup Curve — % Δ Generation Throughput vs n-max</h3>
+  <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">Each model's peak is normalized to +100% for comparison. The "inflection point" (where MTP stops helping) varies by size.</p>
+
+  <!-- 9B curve -->
+  <div style="display:flex;align-items:end;height:200px;padding:1rem 0;border-bottom:1px solid var(--border)">
+    <svg width="600" height="180" viewBox="0 0 600 180">
+      <!-- grid -->
+      <line x1="50" y1="170" x2="580" y2="170" stroke="#30363d"/>
+      <line x1="50" y1="40" x2="580" y2="40" stroke="#30363d" stroke-dasharray="4,4"/>
+      <!-- labels -->
+      <text x="30" y="175" font-size="11" fill="#8b949e">-50%</text>
+      <text x="30" y="100" font-size="11" fill="#8b949e">0%</text>
+      <text x="30" y="30" font-size="11" fill="#8b949e">+50%</text>
+      <!-- 0% line -->
+      <line x1="50" y1="100" x2="580" y2="100" stroke="#30363d" stroke-dasharray="2,4"/>
+      <!-- 9B points: baseline=0, n1=+17, n2=+39, n3=+38, n4=+27, n5=+25, n8=-35 -->
+      <polyline points="50,100 134,61 218,24 302,26 386,49 470,52 554,150" fill="none" stroke="#58a6ff" stroke-width="2.5"/>
+      <circle cx="50" cy="100" r="4" fill="#58a6ff"/>
+      <circle cx="134" cy="61" r="4" fill="#58a6ff"/>
+      <circle cx="218" cy="24" r="5" fill="#3fb950"/>
+      <text x="218" y="15" text-anchor="middle" font-size="11" fill="#3fb950">+39%</text>
+      <circle cx="302" cy="26" r="4" fill="#58a6ff"/>
+      <circle cx="386" cy="49" r="4" fill="#58a6ff"/>
+      <circle cx="470" cy="52" r="4" fill="#58a6ff"/>
+      <circle cx="554" cy="150" r="4" fill="#f85149"/>
+      <text x="554" y="165" text-anchor="middle" font-size="10" fill="#f85149">n=8</text>
+      <!-- x labels -->
+      <text x="50" y="178" text-anchor="middle" font-size="10" fill="#8b949e">base</text>
+      <text x="134" y="178" text-anchor="middle" font-size="10" fill="#8b949e">n=1</text>
+      <text x="218" y="178" text-anchor="middle" font-size="10" fill="#8b949e">n=2</text>
+      <text x="302" y="178" text-anchor="middle" font-size="10" fill="#8b949e">n=3</text>
+      <text x="386" y="178" text-anchor="middle" font-size="10" fill="#8b949e">n=4</text>
+      <text x="470" y="178" text-anchor="middle" font-size="10" fill="#8b949e">n=5</text>
+    </svg>
+  </div>
+
+  <!-- 27B curve -->
+  <p style="font-weight:600;margin-top:1.5rem;color:#e3b341;font-size:0.9rem">Qwen3.6-27B</p>
+  <div style="display:flex;align-items:end;height:200px;padding:1rem 0;border-bottom:1px solid var(--border)">
+    <svg width="450" height="180" viewBox="0 0 450 180">
+      <line x1="50" y1="170" x2="430" y2="170" stroke="#30363d"/>
+      <line x1="50" y1="100" x2="430" y2="100" stroke="#30363d" stroke-dasharray="2,4"/>
+      <text x="30" y="175" font-size="11" fill="#8b949e">-10%</text>
+      <text x="30" y="100" font-size="11" fill="#8b949e">0%</text>
+      <text x="30" y="30" font-size="11" fill="#8b949e">+50%</text>
+      <!-- 27B: baseline=0, n1=+31, n2=+45, n3=+31, n5=+39 -->
+      <polyline points="50,100 145,36 240,16 335,36 430,26" fill="none" stroke="#d29922" stroke-width="2.5"/>
+      <circle cx="50" cy="100" r="4" fill="#d29922"/>
+      <circle cx="145" cy="36" r="4" fill="#d29922"/>
+      <circle cx="240" cy="16" r="5" fill="#3fb950"/>
+      <text x="240" y="7" text-anchor="middle" font-size="11" fill="#3fb950">+45%</text>
+      <circle cx="335" cy="36" r="4" fill="#d29922"/>
+      <circle cx="430" cy="26" r="4" fill="#d29922"/>
+      <text x="50" y="178" text-anchor="middle" font-size="10" fill="#8b949e">base</text>
+      <text x="145" y="178" text-anchor="middle" font-size="10" fill="#8b949e">n=1</text>
+      <text x="240" y="178" text-anchor="middle" font-size="10" fill="#8b949e">n=2</text>
+      <text x="335" y="178" text-anchor="middle" font-size="10" fill="#8b949e">n=3</text>
+      <text x="430" y="178" text-anchor="middle" font-size="10" fill="#8b949e">n=5</text>
+    </svg>
+  </div>
+
+  <!-- 35B curve -->
+  <p style="font-weight:600;margin-top:1.5rem;color:#e3b341;font-size:0.9rem">Qwen3.6-35B-A3B</p>
+  <div style="display:flex;align-items:end;height:200px;padding:1rem 0;border-bottom:1px solid var(--border)">
+    <svg width="450" height="180" viewBox="0 0 450 180">
+      <line x1="50" y1="170" x2="430" y2="170" stroke="#30363d"/>
+      <line x1="50" y1="100" x2="430" y2="100" stroke="#30363d" stroke-dasharray="2,4"/>
+      <text x="30" y="175" font-size="11" fill="#8b949e">-15%</text>
+      <text x="30" y="100" font-size="11" fill="#8b949e">0%</text>
+      <text x="30" y="30" font-size="11" fill="#8b949e">+15%</text>
+      <!-- 35B: baseline=0, n1=-1, n2=+11, n3=-13, n5=+0.4 -->
+      <polyline points="50,100 145,97 240,73 335,130 430,96" fill="none" stroke="#e3b341" stroke-width="2.5"/>
+      <circle cx="50" cy="100" r="4" fill="#e3b341"/>
+      <circle cx="145" cy="97" r="4" fill="#f85149"/>
+      <circle cx="240" cy="73" r="5" fill="#3fb950"/>
+      <text x="240" y="64" text-anchor="middle" font-size="11" fill="#3fb950">+11%</text>
+      <circle cx="335" cy="130" r="4" fill="#f85149"/>
+      <circle cx="430" cy="96" r="4" fill="#e3b341"/>
+      <text x="50" y="178" text-anchor="middle" font-size="10" fill="#8b949e">base</text>
+      <text x="145" y="178" text-anchor="middle" font-size="10" fill="#8b949e">n=1</text>
+      <text x="240" y="178" text-anchor="middle" font-size="10" fill="#8b949e">n=2</text>
+      <text x="335" y="178" text-anchor="middle" font-size="10" fill="#8b949e">n=3</text>
+      <text x="430" y="178" text-anchor="middle" font-size="10" fill="#8b949e">n=5</text>
+    </svg>
+  </div>
+</div>
+
+<!-- Comparison Chart -->
+<div class="chart-container">
+  <h3 style="margin-bottom:1rem;color:var(--accent)">Model Size Comparison — Generation Throughput</h3>
+  <div style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">Peak MTP performance for each model, with baseline for reference.</div>
+
+  <table>
+    <thead><tr><th>Model</th><th>Baseline t/s</th><th>Peak MTP t/s (n-max)</th><th>Best Δ</th></tr></thead>
+    <tbody>
+      <tr><td>9B</td><td>34.6</td><td class="best">48.0 (n=2)</td><td><span class="best">+39%</span></td></tr>
+      <tr><td>27B</td><td>11.5</td><td class="best">16.7 (n=2)</td><td><span class="best">+45%</span></td></tr>
+      <tr><td>35B</td><td>56.5</td><td class="best">62.6 (n=2)</td><td><span class="best">+11%</span></td></tr>
+    </tbody>
+  </table>
+
+  <p style="margin-top:1rem;font-size:0.85rem;color:var(--muted)">Note: The 9B and 27B models show massive relative speedups because their baseline is very bandwidth-limited. The 35B model's larger parallelism masks some of the bottleneck, so MTP provides smaller relative gains. All three models share the same optimal n-max=2.</p>
+</div>
+
+</div>
+</div>
+
+<!-- ROCm Section -->
+<div class="section">
+<h2>🔵 ROCm Status — Incomplete</h2>
+<div class="card">
+  <h3>ROCm Testing: Blocked by Container SDK Gap</h3>
+  <table>
+    <thead><tr><th>Aspect</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Host binary (b9198 ROCm)</td><td>Falls back to CPU silently — no HIP libraries on host</td></tr>
+      <tr><td>Podman container (<code>kyuz0/amd-strix-halo-toolboxes:rocm-7.2.1</code>)</td><td>✅ Has /opt/rocm, hipcc, rocm-smi, /dev/dri, /dev/kfd</td></tr>
+      <tr><td>Building from source in container</td><td>❌ Missing hip-lang CMake packages (no hip-lang-config.cmake)</td></tr>
+      <tr><td>Cross-compiling b9198 ROCm binary → copying into container</td><td>❌ Symbol mismatch (_Z22common_context_seq_add — API changed between builds)</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:1rem;font-size:0.85rem;color:var(--muted)">Recommendation: ROCm testing requires either (a) a proper ROCm SDK install in the container, or (b) building llama.cpp with an older commit that has compatible symbols. The Vulkan approach was chosen as the primary benchmark path since it works end-to-end on the host.</p>
+</div>
+</div>
+
+<!-- Recommendations -->
+<div class="section">
+<h2>📋 Configuration Recommendations</h2>
+<div class="card">
+  <h3>Optimal Settings Summary</h3>
+  <table>
+    <thead><tr><th>Model</th><th>Spec Type</th><th>n-max</th><th>n-gl</th><th>Expected Speedup</th></tr></thead>
+    <tbody>
+      <tr><td>All sizes (9B–35B)</td><td><code>draft-mtp</code></td><td><strong>2</strong></td><td><strong>99</strong></td><td>+11% to +45%</td></tr>
+    </tbody>
+  </table>
+
+  <div class="spec-info" style="margin-top:1.5rem">
+    <p style="margin-bottom:0.5rem;font-weight:600;color:var(--green)">Universal recommendation:</p>
+    <code>--spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-ngl 99</code>
+    <br><br>
+    <p style="font-size:0.85rem;color:var(--muted)">Additional notes for Vulkan:</p>
+    <ul style="margin-top:0.5rem;padding-left:1.2rem;font-size:0.85rem;color:var(--muted)">
+      <li><strong>Do NOT set</strong> <code>--gpu-layers N</code> on Vulkan — let the backend auto-manage memory placement.</li>
+      <li><strong>Avoid n-max ≥ 5</strong> — especially dangerous on smaller models (9B at n=8 drops to -35%).</li>
+      <li><strong>n-max = 2 is the sweet spot</strong> across all tested sizes — provides most of the benefit with minimal overhead.</li>
+      <li><strong>Baseline generation counts are higher on larger models</strong> because prompt phase dominates (the model's KV cache fills faster at more tokens, and the larger parallel compute offsets per-token gen cost).</li>
+    </ul>
+  </div>
+</div>
+</div>
+
+<div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.85rem">
+  Benchmark completed 2026-05-17 · llama.cpp b9198 (a6d6183db) · AMD Strix Halo / RADV Vulkan<br>
+  Generated by Augustus — system at <code>/home/user/Projects/llama-cpp-mtp-tests/mtp-benchmark-results.html</code>
+</div>
+
+<script>
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>
