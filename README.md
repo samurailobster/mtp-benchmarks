@@ -5,6 +5,10 @@ A high-performance analysis of **Multi-Token Prediction (MTP)** capabilities usi
 ## 🎯 Project Goal
 Evaluating the real-world impact of speculative drafting in Large Language Models (LLMs). We specifically analyze the relationship between the number of draft tokens (`n-max`) and the resulting tokens per second (t/s), identifying the efficiency "sweet spot" for modern hardware.
 
+## Important Notes
+- These tests are stale by now.
+- They weren't meant for public consumption.
+
 ## 🛠 Technical Stack
 | Component | Specification |
 | :--- | :--- |
