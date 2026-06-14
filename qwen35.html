@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>MTP Benchmark — Qwen3.5 on b9484</title>
+<style>
+body { font-family: monospace; background: #1a1a2e; color: #e0e0e0; max-width: 960px; margin: 2em auto; padding: 0 1em; }
+h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: .3em; }
+h2 { color: #0f3460; background: #16213e; padding: .5em; border-radius: 4px; margin-top: 2em; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+th, td { padding: .4em .8em; text-align: right; border-bottom: 1px solid #333; }
+th { color: #e94560; text-align: left; }
+td:first-child { text-align: left; }
+.best { background: #1a3a1a; color: #4eff4e; font-weight: bold; }
+.worse { color: #ff6b6b; }
+.ok { color: #4ecdc4; }
+.warning { background: #3a2a0a; padding: .5em 1em; border-left: 3px solid #ffa500; margin: 1em 0; }
+.good { background: #0a2a1a; padding: .5em 1em; border-left: 3px solid #4eff4e; margin: 1em 0; }
+.note { color: #888; font-size: .9em; }
+</style></head><body>
+<h1>MTP Benchmark — Qwen3.5 Models on b9484 Vulkan</h1>
+<p>Corsair AI 300 / AMD Radeon 8060S (RADV STRIX_HALO, gfx1150)<br>
+All Q4_K_XL quant. -n 128 tokens. Directly comparable to b9198 baseline.</p>
+<h2>Qwen3.5-9B-UD (Q4_K_XL, 5.8GB)</h2>
+<table><tr><th>Config</th><th>Prompt t/s</th><th>Gen t/s</th><th>Δ vs baseline</th></tr>
+<tr class=""><td>baseline_t8</td><td>31.0</td><td>34.5</td><td>+0.0%</td></tr>
+<tr class=""><td>baseline_t16</td><td>31.0</td><td>34.5</td><td>+0.0%</td></tr>
+<tr class="ok"><td>mtp_n2_t16</td><td>29.3</td><td>47.0</td><td>+36.2%</td></tr>
+<tr class="best"><td>mtp_n2_t16_poll</td><td>29.5</td><td>48.2</td><td>+39.7%</td></tr>
+<tr class="ok"><td>mtp_n2_t16_ub</td><td>28.7</td><td>48.0</td><td>+39.1%</td></tr>
+<tr class="ok"><td>mtp_n2_t16_pu</td><td>29.3</td><td>47.5</td><td>+37.7%</td></tr>
+<tr class="ok"><td>mtp_n3_t16_pu</td><td>28.9</td><td>47.0</td><td>+36.2%</td></tr>
+<tr class="ok"><td>mtp_n5_t16_pu</td><td>28.9</td><td>46.5</td><td>+34.8%</td></tr>
+</table>
+<div class="note"><p><strong>b9198:</strong> baseline=34.6 t/s, best MTP=48.0 t/s (+38.7%)<br><strong>b9484:</strong> baseline=34.5 t/s, best MTP=48.2 t/s (+39.7%)</p></div>
+<h2>Qwen3.5-27B-UD (Q4_K_XL, 17GB)</h2>
+<table><tr><th>Config</th><th>Prompt t/s</th><th>Gen t/s</th><th>Δ vs baseline</th></tr>
+<tr class=""><td>baseline_t8</td><td>10.9</td><td>11.5</td><td>+0.0%</td></tr>
+<tr class=""><td>baseline_t16</td><td>10.9</td><td>11.5</td><td>+0.0%</td></tr>
+<tr class="ok"><td>mtp_n2_t16</td><td>8.4</td><td>15.9</td><td>+38.3%</td></tr>
+<tr class="ok"><td>mtp_n2_t16_poll</td><td>8.2</td><td>15.9</td><td>+38.3%</td></tr>
+<tr class="ok"><td>mtp_n2_t16_ub</td><td>7.5</td><td>15.9</td><td>+38.3%</td></tr>
+<tr class="ok"><td>mtp_n2_t16_pu</td><td>7.6</td><td>15.9</td><td>+38.3%</td></tr>
+<tr class="best"><td>mtp_n3_t16_pu</td><td>7.3</td><td>16.5</td><td>+43.5%</td></tr>
+<tr class="ok"><td>mtp_n5_t16_pu</td><td>6.8</td><td>15.9</td><td>+38.3%</td></tr>
+</table>
+<div class="note"><p><strong>b9198:</strong> baseline=11.5 t/s, best MTP=16.7 t/s (+45.2%)<br><strong>b9484:</strong> baseline=11.5 t/s, best MTP=16.5 t/s (+43.5%)</p></div>
+<h2>Qwen3.5-35B-A3B-UD (Q4_K_XL, 22GB)</h2>
+<table><tr><th>Config</th><th>Prompt t/s</th><th>Gen t/s</th><th>Δ vs baseline</th></tr>
+<tr class=""><td>baseline_t8</td><td>39.6</td><td>57.7</td><td>-0.7%</td></tr>
+<tr class=""><td>baseline_t16</td><td>42.8</td><td>58.1</td><td>+0.0%</td></tr>
+<tr class="ok"><td>mtp_n2_t16</td><td>25.9</td><td>60.5</td><td>+4.1%</td></tr>
+<tr class="ok"><td>mtp_n2_t16_poll</td><td>28.8</td><td>60.4</td><td>+4.0%</td></tr>
+<tr class="ok"><td>mtp_n2_t16_ub</td><td>22.2</td><td>65.3</td><td>+12.4%</td></tr>
+<tr class="best"><td>mtp_n2_t16_pu</td><td>23.5</td><td>66.3</td><td>+14.1%</td></tr>
+<tr class="ok"><td>mtp_n3_t16_pu</td><td>21.9</td><td>59.7</td><td>+2.8%</td></tr>
+<tr class="worse"><td>mtp_n5_t16_pu</td><td>20.4</td><td>48.7</td><td>-16.2%</td></tr>
+</table>
+<div class="note"><p><strong>b9198:</strong> baseline=56.5 t/s, best MTP=62.6 t/s (+10.8%)<br><strong>b9484:</strong> baseline=58.1 t/s, best MTP=66.3 t/s (+14.1%)</p></div>
+
+<h2>Key Findings — Qwen3.5 on b9484</h2>
+<div class="good"><strong>9B: MTP still solid.</strong> n=2 with --poll gives 48.2 t/s (+39%). Essentially identical to b9198 (48.0/+38.7%). b9484 didn't move the needle here — good news, no regression.</div>
+<div class="good"><strong>27B: n=3 is slightly better now.</strong> mtp_n3_t16_pu at 16.5 t/s beats n=2 (15.9) for the first time. vs b9198 best of 16.7/+45%, we're close. Interesting that n=3+poll+ub works here.</div>
+<div class="good"><strong>35B: --poll + -ub is BEST, not worst.</strong> mtp_n2_t16_pu at 66.3 t/s (+14%) — significantly different from Qwen3.6-35B where those flags hurt. b9198 best was 62.6/+10.8%. So b9484 actually improved the 35B with flags: +14% vs +11%.</div>
+<div class="warning"><strong>Cross-model anomaly:</strong> Qwen3.6-35B hates --poll/-ub on b9484 (drops to 7-8 t/s). Qwen3.5-35B loves them (best config). The model architecture difference (UD vs A3B, or Q6 vs Q4) is the divider. Use --poll + -ub for Qwen3.5 models only.</div>
+
+<h2>Recommended Configs</h2>
+<table><tr><th>Model</th><th>Best Config</th><th>Gen t/s</th></tr>
+<tr><td>Qwen3.5-9B Q4</td><td class="ok">--spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-ngl 99 -t 16 --poll 100</td><td>48.2</td></tr>
+<tr><td>Qwen3.5-27B Q4</td><td class="ok">--spec-type draft-mtp --spec-draft-n-max 3 --spec-draft-ngl 99 -t 16 --poll 100 -ub 1024</td><td>16.5</td></tr>
+<tr><td>Qwen3.5-35B Q4</td><td class="ok">--spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-ngl 99 -t 16 --poll 100 -ub 1024</td><td>66.3</td></tr>
+</table>
+
+</body></html>
