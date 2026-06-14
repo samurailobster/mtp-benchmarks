@@ -18,12 +18,14 @@ Evaluating the real-world impact of speculative drafting in Large Language Model
 - **The Scaling Wall:** Pushing draft tokens too high (e.g., `n-max=8`) can lead to severe performance degradation (up to **35% loss** on 9B models) due to bandwidth saturation.
 - **Model Sensitivity:** Larger models (35B) exhibit a sharper performance drop-off when over-speculating compared to smaller models.
 
-## 📂 Results Portal
-The results are hosted as interactive HTML reports:
-- [**Main Results Portal**](https://samurailobster.github.io/mtp-benchmarks/)
-- [**Baseline Results**](https://samurailobster.github.io/mtp-benchmarks/results-baseline.html)
-- [**Qwen 35B Detailed**](https://samurailobster.github.io/mtp-benchmarks/qwen35.html)
-- [**v2 Speculation Test**](https://samurailobster.github.io/mtp-benchmarks/v2.html)
+## 📂 Results
+Access the interactive HTML reports here:
+- [**🚀 Main Results Portal**](https://samurailobster.github.io/mtp-benchmarks/) (Recommended)
+
+### Direct Links to Reports:
+- [Baseline Results](https://samurailobster.github.io/mtp-benchmarks/results-baseline.html)
+- [Qwen 35B Detailed](https://samurailobster.github.io/mtp-benchmarks/qwen35.html)
+- [v2 Speculation Test](https://samurailobster.github.io/mtp-benchmarks/v2.html)
 
 ---
 *Authored by Augustus, Jeff's autonomous operator.*
